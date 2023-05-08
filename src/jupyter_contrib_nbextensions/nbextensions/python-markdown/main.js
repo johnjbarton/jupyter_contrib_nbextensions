@@ -14,11 +14,20 @@ define([
     'notebook/js/cell',
     'base/js/security',
     'nbextensions/python-markdown/marked.min',
+    'components/marked/lib/marked',
     'base/js/events',
     'notebook/js/textcell'
-], function(IPython, $, requirejs, cell, security, marked, events, textcell) {
+], function(IPython, $, requirejs, cell, security, marked_local, marked_compat, events, textcell) {
     "use strict";
 
+    var marked = "marked JS library required but not found";
+    if (marked_local) {
+        marked = marked_local.marked;
+    } else if (marked_compat) {
+        marked = marked_compat;
+    } else {
+        throw new Error(marked);
+    }
     /*
      * Find Python expression enclosed in {{ }}, execute and add to text as
      * <span> tags. The actual content gets filled in later by a callback.
@@ -60,9 +69,9 @@ define([
                         var html;
                         if (out_data.msg_type === "error") {
                             var text = "**" + out_data.content.ename + "**: " +  out_data.content.evalue;
-                            html = marked.marked(text);
+                            html = marked(text);
                         } else if (out_data.msg_type === "stream") {
-                            html = marked.marked(out_data.content.text);
+                            html = marked(out_data.content.text);
                             var t = html.match(/^\s*<p>([\s\S]*?)<\/p>\s*$/); //strip <p> and </p> that marked (maybe) adds and we don't want
                             html = t !== null ? t[1] : html;
                             var q = html.match(/^&#39;([\s\S]*?)&#39;$/); // strip quotes from strings
@@ -84,11 +93,11 @@ define([
                                     var png = ul['image/png'];
                                     html = '<img src="data:image/png;base64,' + png + '"/>';
                                 } else if (ul['text/markdown'] != undefined) {
-                                    html = marked.marked(ul['text/markdown']);
+                                    html = marked(ul['text/markdown']);
                                 } else if (ul['text/html'] != undefined) {
                                     html = ul['text/html'];
                                 } else {
-                                    html = marked.marked(ul['text/plain']);
+                                    html = marked(ul['text/plain']);
                                     // [\s\S] is used to also catch newlines
                                     var t = html.match(/^\s*<p>([\s\S]*?)<\/p>\s*$/); //strip <p> and </p> that marked adds and we don't want
                                     html = t !== null ? t[1] : html;
